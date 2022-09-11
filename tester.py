@@ -34,9 +34,10 @@ async def run_tests(code: str, tests: list) -> bool:
         actual = await run_apl("⎕←" + test[0] + code + test[1])
         expected = test[2]
         if not actual == expected:
-            return f"Error! Expected value\n{expected}\ngot\n{actual}"
+            #print(f"Error! Expected value\n{expected}\ngot\n{actual}")
+            return False
     
-    return "All tests passed!"
+    return True
         
 
 # Tests

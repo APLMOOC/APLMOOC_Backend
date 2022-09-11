@@ -1,0 +1,4 @@
+Flask==2.2.2
+asyncio==3.4.3
+msgpack==1.0.4
+websockets==8.1

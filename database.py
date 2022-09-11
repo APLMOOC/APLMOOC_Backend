@@ -1,5 +1,4 @@
 from flask import g
-from server import app
 import sqlite3
 
 DATABASE = "points.sqlite3"
@@ -12,11 +11,10 @@ def get_db():
 
 
 def init_db():
-    with app.app_context():
-        db = get_db()
-        with app.open_resource("schema.sql", mode="r") as f:
-            db.cursor().executescript(f.read())
-        db.commit()
+    db = get_db()
+    with open("schema.sql", "r") as f:
+        db.cursor().executescript(f.read())
+    db.commit()
 
 
 def query_db(query, args=(), one=False):
@@ -30,10 +28,3 @@ def insert_db(query, args=()):
     db = get_db()
     db.execute(query, args)
     db.commit()
-
-
-@app.teardown_appcontext
-def close_connection(exception):
-    db = getattr(g, "_database", None)
-    if db is not None:
-        db.close()

@@ -23,7 +23,7 @@ def index():
 
 @app.route("/get")
 def get():
-    return "\n".join([str(a) for a in database.query_db("SELECT * FROM Points")])
+    return "\n".join([str(a) for a in database.query_db("SELECT uid, SUM(points) FROM Points GROUP BY uid")])
 
 
 @app.route("/submit", methods=["POST"])

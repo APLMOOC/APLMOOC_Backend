@@ -43,7 +43,8 @@ def submit():
                                 ]))
     
     if result:
-        database.insert_db("INSERT INTO Points (uid, pid, points) VALUES (?, ?, ?)", (uid,pid,1))
+        database.insert_db("INSERT OR IGNORE INTO Points (uid, pid, points) VALUES (?, ?, ?)", (uid,pid,1))
+        database.insert_db("UPDATE Points SET points=? WHERE uid=? AND pid=?", (1,uid,pid))
         return "All tests passed!\n"
     else:
         return "Tests failed\n"

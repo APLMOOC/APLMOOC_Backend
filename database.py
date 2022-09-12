@@ -3,15 +3,16 @@ import sqlite3
 
 DATABASE = "points.sqlite3"
 
+
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
         db = g._database = sqlite3.connect(DATABASE)
+        init_db(db)
     return db
 
 
-def init_db():
-    db = get_db()
+def init_db(db):
     with open("schema.sql", "r") as f:
         db.cursor().executescript(f.read())
     db.commit()

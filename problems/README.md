@@ -6,9 +6,8 @@ Test cases, data and a sample solution are provided in a JSON file which describ
 
 - id: unique problem identifier
 - data: a list of objects
-  - filename: a string defining the file name
-  - data: the data in any suitable representation
   - save: a string containing the APL expression used to save the file
+  - any other members can be used as auxiliary APL values in the save expression
 - testcases
   - basic: A list of test cases. If the entrypoint function is monadic, it is a list of strings. If it is dyadic, it is a list of two-element strings which are APL expressions for the left and right arguments respecitvely.
   - edge: Optional edge cases in the same format as basic

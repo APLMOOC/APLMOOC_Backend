@@ -5,9 +5,9 @@ This file describes the format of test cases and return value for testing soluti
 Test cases, data and a sample solution are provided in a JSON file which describes a single object with the following members:
 
 - id: unique problem identifier
-- data: a list of objects
-  - save: a string containing the APL expression used to save the file
-  - any other members can be used as auxiliary APL values in the save expression
+- env: a list of objects
+  - setup: a string containing the APL expression to be executed before tests are run, for example to save a file
+  - any other members can be used as auxiliary APL values in the setup expression
 - testcases
   - basic: A list of test cases. If the entrypoint function is monadic, it is a list of strings. If it is dyadic, it is a list of two-element strings which are APL expressions for the left and right arguments respecitvely.
   - edge: Optional edge cases in the same format as basic

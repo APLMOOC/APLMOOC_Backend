@@ -1,14 +1,26 @@
 # Automatically validated problems
 This file describes the format of test cases and return value for testing solutions to problems with dyalog.run. The example problem provided is intended to demonstrate the available features of the testing framework.
 
+## TO DO
+- [ ] Write test framework
+- could to HTML output as an additional return field "All basic tests pass. For extra points, consider cases such as..." the only thing is this doesn't scale well for large literal arguments... but since they will always be provided as 
+- [ ] Test framework
+  - [x] Empty solution
+  - [ ] Prohobited chars
+
+- [ ] Check TryAPL test framework
+- [ ] There must be a way for the test options to allow the source of an anonymous function for phase 1 style problems
+  - anonymous: Boolean
+
 ## Test Cases
 Test cases, data and a sample solution are provided in a JSON file which describes a single object with the following members:
 
 - id: unique problem identifier
+- entrypoint: name of the function entrypoint for this problem
 - env: a list of objects
   - setup: a string containing the APL expression to be executed before tests are run, for example to save a file
   - any other members can be used as auxiliary APL values in the setup expression
-- testcases
+- tests
   - basic: A list of test cases. If the entrypoint function is monadic, it is a list of strings. If it is dyadic, it is a list of two-element strings which are APL expressions for the left and right arguments respecitvely.
   - edge: Optional edge cases in the same format as basic
 - reference: a string of the APL code reference solution
@@ -34,7 +46,7 @@ People's names and corresponding scores are stored in a CSV file. Weights may be
 
 Write an ambivalent function "Ranking" which accepts:
 
-- as right argument a simple character vector giving the name of a CSV file
+- as right argument a simple character vector giving the name of a CSV file which has two columns "name" and "score"
 - as optional left argument, either:
   - a simple numeric vector of integers
   - a simple character vector giving the name of a file of raw 8 bit signed integers

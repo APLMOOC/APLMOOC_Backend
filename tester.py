@@ -1,8 +1,9 @@
+import json
 import asyncio
 import msgpack
 from websockets import connect
 from enum import Enum, auto
-
+from test_framework.test_namespace import setup_framework
 
 async def run_apl(code: str) -> str:
     """
@@ -21,40 +22,54 @@ async def run_apl(code: str) -> str:
         response.update({"stdout" : response["stdout"].decode(), "stderr" : response["stderr"].decode()})
         return response
 
-
-async def run_tests(code: str, tests: list) -> tuple:
+async def run_tests(code: str, tests: dict) -> dict:
     """
     Run a set of tests on APL code
 
     Arguments:
     code - the APL code to run
-    tests - a list of tuples. The first and second element of the tuple
-    are the left and right arguments of the function, while the third is
-    the expected output.
+    tests - dict of options as described in test_framework/READEME.md
 
     Outputs:
-    A tuple containing a success value (boolean) and a reason (string)
+    A dict containing information about the test run
     """
-    base = await run_apl(code)
+    # Wrap user code in text definition
+    APLString = lambda s: json.dumps("''".join(s.split("'")))
+    user_code = "\nuser_code←0⎕JSON'" + APLString(code) + "'\n"
+    test_opts = "\nopts←0⎕JSON'" + "''".join(json.dumps(tests).split("'")) + "'\n"
+    
+    # Bundle test framework, user code and execution expression as a string
+    test = setup_framework + user_code + test_opts + "⎕←1⎕JSON opts ⎕SE.Test.Run user_code"
+    # Response → dict
+    base = await run_apl(test)
+    #print(base)
     if base["timed_out"]:
         return False, "Execution timed out (5s)"
     if base["status_value"] != 0:
+        print(base["stderr"])
         return False, base["stderr"]
 
-    for test in tests:
-        assert(len(test)==3)
-        actual = (await run_apl("⎕←" + test[0] + code + test[1]))["stdout"]
-        expected = test[2]
-        if not actual == expected:
-            return False, f"Test:\n{test[0] + code + test[1]}\n\nExpected value:\n{expected}\nActual value:\n{actual}"
-    
-    return True, ""
-        
+    #print("\n\n"+base["stdout"])
+    #print("\n\n"+base["stderr"])
+    output = json.loads(base["stdout"])
+    feedback = ["Basic test failed.",
+                "Passed basic tests, well done. For extra points, consider cases like ",
+                "Congratulations! All tests passed. "]
+    msg = feedback[output["status"]] + "\n"
+    if 2 > output["status"]:
+        if "error" in output:
+            msg += "\n\nAn error occured.\n" + output["report"]
+        if "larg" in output:
+            msg += output["larg"] + " as left argument and "
+        if "rarg" in output:
+            msg += output["rarg"] + " as right argument."
+    return msg
 
 # Tests
 if __name__ == "__main__":
-    print(asyncio.run(run_apl("⎕←3 3⍴9?9")))
-    print(asyncio.run(run_tests("⍴", [("2 2","⍳4","1 2\n3 4\n"),
-                                      ("⍴ 0","0","0\n"),
-                                      ("3 3","1","1 1 1\n1 1 1\n1 1 1\n")
-                                     ])))
+    with open("test_framework/example.json", encoding="utf-8") as f:
+        eg_test = json.load(f)
+    for test in ["Ranking.aplf", "RankingProh.aplf", "RankingFull.aplf"]:
+        with open("test_framework/" + test, encoding="utf-8") as f:
+            user_sub = f.read()
+        print(asyncio.run(run_tests(user_sub, eg_test)))

@@ -52,18 +52,18 @@ async def run_tests(code: str, tests: dict) -> dict:
     #print("\n\n"+base["stdout"])
     #print("\n\n"+base["stderr"])
     output = json.loads(base["stdout"])
-    feedback = ["Basic test failed.",
+    feedback = ["Basic test failed. ",
                 "Passed basic tests, well done. For extra points, consider cases like ",
                 "Congratulations! All tests passed. "]
-    msg = feedback[output["status"]] + "\n"
+    msg = feedback[output["status"]]
     if 2 > output["status"]:
         if "error" in output:
-            msg += "\n\nAn error occured.\n" + output["report"]
+            msg += "An error occured. " + output["report"]
         if "larg" in output:
             msg += output["larg"] + " as left argument and "
         if "rarg" in output:
             msg += output["rarg"] + " as right argument."
-    return msg
+    return msg + "\n"
 
 # Tests
 if __name__ == "__main__":

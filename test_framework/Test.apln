@@ -52,8 +52,8 @@
       :AndIf ×≢proh←opts.x∩user_code
           r.error←98
           r.report←proh
-          r.report,←' which ','is' 'are'⊃⍨2⌊≢proh
-          r.report,←' prohibited for this problem'
+          r.report,←' found in source, which ','is' 'are'⊃⍨2⌊≢proh
+          r.report,←' prohibited for this problem.'
           :Return
       :EndIf
      
@@ -66,11 +66,11 @@
           '#.REF'⎕NS''
           #.REF Define opts.reference
           r.status←0
-          r←r RunTests LoadTests opts.tests.basic   ⍝ passing/returning ref to r maybe make more obvious that r is being changed?
+          r←r RunTests opts.tests.basic
           :If 0=r.status ⋄ :Return ⋄ :EndIf   ⍝ Do not continue if basic case failed
           :If ×opts.tests.⎕NC'edge'
               :Trap 0
-                  r←r RunTests LoadTests opts.tests.edge
+                  r←r RunTests opts.tests.edge
               :Else
                   r.status←1   ⍝ Passed basic cases
               :EndTrap
@@ -81,10 +81,7 @@
           r.error←-⎕EN
           r.report←∊(⎕UCS 10)∘,¨⎕DMX.DM
           :Return
-      :EndTrap
-     
-      ⍝r←1 ⎕JSON r
-     
+      :EndTrap     
     ∇
 
     ∇ {ns}Define source;nl
@@ -121,10 +118,9 @@
       }
 
     ∇ values←LoadTests cases;c;r;Join
-    ⍝ TODO merge GetArgs behaviour here so don't have to Rep and ⍎
       c←''
       :Trap 0
-          values←{⍎¨⊆c⊢←⍵}¨cases
+          values←{⍎¨⊆c⊢←⍵}¨⊆cases
       :Else
           Join←⊃(⊣,',',⊢)/
           r←'Failed to define ',(Join c),' as test case ',Error ⎕DMX.DM
@@ -134,10 +130,11 @@
 
     ∇ r←r RunTests cases;case;ref;user;pass
       pass←1
-      :For case :In cases
+      vals←LoadTests cases
+      :For case val :InEach cases vals
           r←r GetArgs case
-          user←#.USER(opts.entrypoint Exec)case
-          ref←#.REF(opts.entrypoint Exec)case
+          user←#.USER(opts.entrypoint Exec)val
+          ref←#.REF(opts.entrypoint Exec)val
           r.expected←Rep ref
           pass∧←user≡ref
       :EndFor
@@ -185,13 +182,13 @@
          ⍝ Simple objects (char should account for ⎕TC chars et al.)
               ⎕PP←34 ⍝ for numbers
      
-              cmpv←{⎕DCT←⎕CT←⎕IO←0                    ⍝ compress numeric vector
+              cmpv←{⎕DCT←⎕CT←⎕IO←0               ⍝ compress numeric vector
                   ⎕FR←645 1287[1289≠⎕DR ⍵]       ⍝ outer array may have been nested
                   ∨/e←(0∊s),⍬≡s←⍴v←⍵:⍕e/'⍬',1↑v  ⍝ empty or scalar
                   ⍺←4 ⋄ ⍺≥s:⍕v↑⍨⍺⌊s              ⍝ min length to consider compressing
                   d←{⍵>¯1⌽1 1 0⍷⍵}{1,⍵,⍨1↑⍵}2≠/2-/v
-             ⍝ We know we have at least ONE section to deal with
-             ⍝ We split the list into sections that either have to be compressed or not
+                 ⍝ We know we have at least ONE section to deal with
+                 ⍝ We split the list into sections that either have to be compressed or not
                   s←-+/lim←{(⍵>1⌽⍵)∨⍵>¯1↓0,⍵}d   ⍝ where each section starts
                   addp←(s↑1)<s≠¯1                ⍝ where to add parentheses
                   r←1↓⊃,/addp{d v←⍵ ⋄ ∧/d:',',⍕v ⍝ all different?
@@ -204,7 +201,7 @@
                       (⍴d←⍕v)>⍴t←A,B,C:ap t
                       ',',d
                   }¨↓⍉↑lim∘⊂¨d v
-             ⍝ There may be some superflous commas
+                 ⍝ There may be some superflous commas
                   b←(','=r)⍲(¯1⌽r=')')⍱1⌽r∊'[('
                   x←(b\b/r)~'['
                   brace←5≤10|⎕DR ⍵
@@ -216,7 +213,7 @@
               }
      
               obj←shape,num ⍺{1↑⍺:cmpv ⍵ ⋄ ⎕ML←1 ⋄ ⎕IO←0 ⋄ QU←{Q,((1+t=Q)/t←⍵),Q←''''}
-            ⍝ We have to assume not all characters are available. Those should be:
+             ⍝ We have to assume not all characters are available. Those should be:
                   Always←⎕A,⎕D,'abcdefghijklmnopqrstuvwxyz_.,:;%!"/=\-+''#$£¢^¿¡(){}[]§@`∣¶&'
                   Always,←'ÁÂÃÇÈÊËÌÍÎÏÐÒÓÔÕÙÚÛÝþãìðòõÀÄÅÆÉÑÖØÜßàáâäåæçèéêëíîïñùúûüóôöø'
                   Always,←'≤≥⌿⍀<>≠∨∧÷×?∊⍴~↑↓⍳○*⌈⌷¨⌊∇∆⍙⍨∘⊂⊃∩∪⊥⊤⌶|⍺⍵¯⍬⍱⍲⍒⍋⍉⌽⊖⍟⌹⍕⍎⍫⍪≡≢⍷⋄←→⍝⎕⍞⍣ '
@@ -224,12 +221,12 @@
                   Always,←'⊢⊣',⎕UCS u/8838 9016 9018 9056 9060 9080 ⍝ ⊂_ ⎕= ⎕⋄ ⎕: ∘¨ ⍳_
                   Always,←⎕UCS 9061/⍨u∧18≤1 0⊃'.'⎕VFI 1⊃# ⎕WG'APLVersion' ⍝ ○¨
                   ∧/t←⍵∊Always:QU ⍵ ⍝ no special chars?
-            ⍝ If only a few chars transform the whole string into ⎕AV
+                 ⍝ If only a few chars transform the whole string into ⎕AV
                   UCS←{1⌽')(⎕ucs ',⍕cmpv ⎕UCS ⍵}
-            ⍝ More than a few; create a mixture of ⎕UCS and 'quotes'
+                 ⍝ More than a few; create a mixture of ⎕UCS and 'quotes'
                   minsize←3 ⍝ how much special chars to include between sections; that number is subjective
                   c∨←minsize>∊⍴¨c←ucs⊂⍨c←1,1↓ucs≠¯1⌽ucs←~t ⍝ consider small groups of ASCII as UCS
-             ⍝ ∧/sc←∊c:ucs ⍵ ⍝ are the pieces small enough to be all in ⎕UCS?
+                 ⍝ ∧/sc←∊c:ucs ⍵ ⍝ are the pieces small enough to be all in ⎕UCS?
                   (lp rp)←'()'/⍨¨(1↓⍺)∧1<+/c←1,1↓ucs≠¯1⌽ucs←∊c
                   rp,⍨lp,∊{⍺,',',⍵}/(c/ucs){⍺:UCS ⍵ ⋄ QU ⍵}¨c⊂⍵
               }obj
@@ -242,9 +239,10 @@
 
     ∇ py←ExportPy;bin;nl
      ⍝ Serialise and compress this namespace and embed in python string
+     ⍝ The string contains APL expressions executed in dyalog.run to define T and Test in ⎕SE
       bin←⊃⌽2(219⌶)1(220⌶)⎕THIS
       nl←⎕UCS 10
-      py←'# This is generated by Test.ExportPy in lib/Test.apln',nl
+      py←'# This is generated by Test.ExportPy in test_framework/Test.apln',nl
       py,←'test_namespace = """T←⍬',nl
       py,←∊('T,←'∘,∘⍕¨((≢bin)⍴150↑1)⊂bin),¨nl
       py,←'"""',nl

@@ -1,0 +1,6 @@
+ Ranking←{ ⍺←1 
+⍝ Reference solution for numeric left argument only
+    (t h)←⎕CSV ⍵ ⍬ 4 1 
+    T←{t[;h⍳⊆⍵]} 
+    (T'name')[⍒⍺×T'score'] 
+}

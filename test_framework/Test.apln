@@ -1,0 +1,254 @@
+:Namespace Test
+
+    ∇ r←opts Run user_code;proh
+⍝ Execute test cases and compare results between reference code and user code
+     
+⍝ user_code is a simple character vector of APL code to fix
+     
+⍝ opts is a namespace containing:
+⍝ - id: string unique problem identifier
+⍝ - entrypoint: string name of function for problem
+⍝ - env (optional): a list of objects
+⍝   - setup: a string containing the APL expression to be executed before tests are run, for example to save a file
+⍝   - any other members can be used as auxiliary APL values in the setup expression
+⍝ - tests
+⍝   - basic: A list of test cases. If the entrypoint function is monadic, it is a list of strings. If it is dyadic, it is a list of two-element strings which are APL expressions for the left and right arguments respecitvely.
+⍝   - edge (optional): edge cases in the same format as basic
+⍝ - reference: a string of the APL code reference solution
+⍝ - post: string of an APL function which is applied monadically to post-process results of the reference and user solutions before comparison with the match function
+⍝ - x (optional): string of prohibited characters
+     
+⍝ r is a namespace containing:
+⍝ - id: the problem ID
+⍝ - submission: the user's code
+⍝ - rarg: string representation of a failing right argument
+⍝ - larg: string representation of a failing left argument
+⍝ - result: string representation of the result of the user's code
+⍝ - expected: string representation of the result of the reference solution
+⍝ - report: string or list of strings containing information about any issues while processing
+⍝ - status: whether tests passed
+⍝   -   0      failed basic test
+⍝   -   1      passed basic tests but failed one or more edge cases
+⍝   -   2      passed all tests
+⍝ - error: return code for errors
+⍝   -   98     prohibited characters used
+⍝   -   99     user submission was blank
+⍝   -   ¯710   timeout
+⍝   -   ¯315   internal error
+⍝   -   -n     APL error with error number n
+     
+      r←⎕NS''
+      r.id←opts.id
+      r.submission←user_code
+      r.status←0
+     
+      :If ''≡user_code~' '   ⍝ empty submission?
+          r.error←99 ⋄ r.report←'Empty submission'
+          :Return
+      :EndIf
+     
+      ⍝ CheckProhibited opts
+      :If ×opts.⎕NC'x'
+      :AndIf ×≢proh←opts.x∩user_code
+          r.error←98
+          r.report←proh
+          r.report,←' found in source, which ','is' 'are'⊃⍨2⌊≢proh
+          r.report,←' prohibited for this problem.'
+          :Return
+      :EndIf
+     
+      :Trap 0
+          :If ×opts.⎕NC'env'
+              opts.env.(⍎setup)   ⍝ Set up environment, for example saving data to files
+          :EndIf
+          '#.USER'⎕NS''
+          #.USER Define user_code
+          '#.REF'⎕NS''
+          #.REF Define opts.reference
+          r.status←0
+          r←r RunTests opts.tests.basic
+          :If 0=r.status ⋄ :Return ⋄ :EndIf   ⍝ Do not continue if basic case failed
+          :If ×opts.tests.⎕NC'edge'
+              :Trap 0
+                  r←r RunTests opts.tests.edge
+              :Else
+                  r.status←1   ⍝ Passed basic cases
+              :EndTrap
+          :Else
+              r.status×←2    ⍝ If only basic cases given but they passed, then "all tests passed"
+          :EndIf
+      :Else
+          r.error←-⎕EN
+          r.report←∊(⎕UCS 10)∘,¨⎕DMX.DM
+          :Return
+      :EndTrap     
+    ∇
+
+    ∇ {ns}Define source;nl
+      :If 0=⎕NC'ns' ⋄ ns←⎕THIS ⋄ :EndIf
+      :Trap 0
+          nl←⎕UCS 10 13
+          source,⍨←'⍝',nl   ⍝ Bug workaround: source fails to fix if first line starts with dfn definition
+          2 ns.⎕FIX nl(~⍤∊⍨⊆⊢)source
+      :Else
+          'Error trying to fix user code in workspace'⎕SIGNAL 315
+      :EndTrap
+    ∇
+
+      CodeTag←{
+          (,¨'^<&>$')⎕R('<code class="',⍺,'">')'\&lt;' '\&amp;' '\&gt;' '</code>',⍕⍵
+      }
+
+      Exec←{
+          ⍺←⎕THIS
+          Fn←⍺.⍎⍺⍺
+          2=≢⍵:⊃Fn/⍵
+          Fn⊃⍵
+      }
+
+      Error←{
+          newline←⎕UCS 10
+          ⊃,/newline,¨⍵
+      }
+
+      GetArgs←{
+          2=≢⍵:⍺⊣⍺.(larg rarg)←⍵
+          ⍺.rarg←⊃⍵
+          ⍺
+      }
+
+    ∇ values←LoadTests cases;c;r;Join
+      c←''
+      :Trap 0
+          values←{⍎¨⊆c⊢←⍵}¨⊆cases
+      :Else
+          Join←⊃(⊣,',',⊢)/
+          r←'Failed to define ',(Join c),' as test case ',Error ⎕DMX.DM
+          r ⎕SIGNAL 315
+      :EndTrap
+    ∇
+
+    ∇ r←r RunTests cases;case;ref;user;pass
+      pass←1
+      vals←LoadTests cases
+      :For case val :InEach cases vals
+          r←r GetArgs case
+          user←#.USER(opts.entrypoint Exec)val
+          ref←#.REF(opts.entrypoint Exec)val
+          r.expected←Rep ref
+          pass∧←user≡ref
+      :EndFor
+      r.status+←pass  ⍝ Success code increments if all cases pass
+    ∇
+
+      Rep←{ ⍝ String representation of object V0.35 (⎕SE.Dyalog.Utils.repObj)
+      ⍝ Optional left arg: parenthesise if needed to isolate expression in context
+     
+          ⍺←0 ⍝ parenthesise if expression
+          P←'(',')',⍨⍕
+          10::P⍣⍺⊢'0(220⌶)0(219⌶)',∊P¨2 9(219⌶)1(220⌶)⍵
+          ⎕FR←645 1287[⎕IO+1287=⎕DR ⍵] ⍝ prepare for decfs
+          expr←{
+              s←⍵/⍨~≠\''''=⍵ ⍝ remove strings
+              p←s/⍨0=+\-⌿'()'∘.=s ⍝ remove parens
+              b←p/⍨0=+\-⌿'[]'∘.=p ⍝ remove brackets
+              ∨/'⊂,⍴+-×/⍳'∊p:P ⍵ ⍝ if expression; parenthesise
+              ⍵
+          }⍣⍺{
+         ⍝ This version accounts for ⎕TC type characters
+         ⍝ Recognise some constants:
+              ⍵≡⍬:'⍬' ⋄ ⍵≡'':'''''' ⋄ ⍵≡⎕NULL:'⎕NULL'
+              ⍵≡⎕D:'⎕D' ⋄ ⍵≡⎕A:'⎕A' ⋄ ⍵≡⎕Á:'⎕Á' ⋄ ⍵≡⎕AV:'⎕AV'
+              scal←0∊rank←+/⍴s←⍴⍵ ⋄ char←>/(simple num)←∧\~(10|⎕DR 1/⍵)∊¨6(0 2)
+         ⍝ Refs should normally not be displayed. To allow remove set ⍺[2] to 1
+              ⍺←0              ⍝ recursive call?
+              (rc ref)←2↑⍺
+              or←scal∧1=≡R←⍵   ⍝ normally no funny objects like ⎕ORs
+              or∨9=⎕NC'R':ref{~⍺:⎕SIGNAL⊂('EN' 11)('Message' 'Cannot represent refs') ⋄ ⍵}⍕⍵     ⍝ display refs as they are
+     
+         ⍝ Reduce object to 1 item if all same elements
+              mod←(0<rank)∧(n=0)∨(5×char)<n←×/s
+              mod←mod∧as←char{0∊⍴⍵:1 ⋄ 11::0 ⋄ ⍵∧.≡1↑⍵}obj←,⍵ ⍝ as: all the same (Mantis 18499)
+              obj←mod{16::⊂'[ref]' ⋄ 1(↑⍣⍺)⍵}obj  ⍝ take only 1st? (grab prototype if empty)
+              shape←mod{⍵≡,1:',' ⋄ (⍺∨1<⍴⍵)/'⍴',⍨⍕⍵}s
+              shape←shape,(encl←simple<as)⍴'⊂'
+     
+         ⍝ Simple scalars and char vector≠⍴1 do not need parens
+              parens←rc∧simple≤(0<⍴shape)∨(rank=1)∧num∨{80 82 160 320∊⍨⎕DR ⍵:∨/0 8 10 13 133∊⎕UCS ⍵ ⋄ 0}⍵
+              (lp rp)←parens⍴¨'()'
+              Paren←{>/'⎕' 'ADÁN'∊¨⍨2↑⍵:P ⍵ ⋄ ⍵} ⍝ Parenthesise complex expressions
+              ~simple:rp,⍨lp,shape,encl{⍺⍲'('=1↑⍵:⍵ ⋄ 1↓¯1↓⍵}1↓⊃,/' ',¨Paren¨1 ref∘∇¨obj
+     
+         ⍝ Simple objects (char should account for ⎕TC chars et al.)
+              ⎕PP←34 ⍝ for numbers
+     
+              cmpv←{⎕DCT←⎕CT←⎕IO←0               ⍝ compress numeric vector
+                  ⎕FR←645 1287[1289≠⎕DR ⍵]       ⍝ outer array may have been nested
+                  ∨/e←(0∊s),⍬≡s←⍴v←⍵:⍕e/'⍬',1↑v  ⍝ empty or scalar
+                  ⍺←4 ⋄ ⍺≥s:⍕v↑⍨⍺⌊s              ⍝ min length to consider compressing
+                  d←{⍵>¯1⌽1 1 0⍷⍵}{1,⍵,⍨1↑⍵}2≠/2-/v
+                 ⍝ We know we have at least ONE section to deal with
+                 ⍝ We split the list into sections that either have to be compressed or not
+                  s←-+/lim←{(⍵>1⌽⍵)∨⍵>¯1↓0,⍵}d   ⍝ where each section starts
+                  addp←(s↑1)<s≠¯1                ⍝ where to add parentheses
+                  r←1↓⊃,/addp{d v←⍵ ⋄ ∧/d:',',⍕v ⍝ all different?
+                      lp←'[('[⍺] ⋄ rp←⍺/')' ⋄ ap←{',',lp,⍵,rp}
+                      0=∆←-⍨/2⍴v:ap(⍕⍴v),'/',⍕1⍴v ⍝ all the same
+                      A←(nz←0≠t)/⍕t←1⍴v          ⍝ write A+B×⍳C
+                      A,←nz/'+'
+                      B←(t≠1)/(⍕t←∆),'×'
+                      C←'⎕io-⍨⍳',⍕⍴v
+                      (⍴d←⍕v)>⍴t←A,B,C:ap t
+                      ',',d
+                  }¨↓⍉↑lim∘⊂¨d v
+                 ⍝ There may be some superflous commas
+                  b←(','=r)⍲(¯1⌽r=')')⍱1⌽r∊'[('
+                  x←(b\b/r)~'['
+                  brace←5≤10|⎕DR ⍵
+                  (ob cb)←brace/¨'({⎕io←0⋄'(1⌽')⊣⎕fr←⍵}',⍕⎕FR) ⍝ dfn to set ⎕FR if float
+                  ⍵≡⍎x:ob,'⎕io-⍨'⎕R''⍣brace⊢x,cb
+                  fmt←⍕⍵
+                  ⍵≡⍎fmt:ob,cb,⍨⍕⍵
+                  ⎕SIGNAL⊂('EN' 16)('Message' 'Generated expression did not match argument')⍝ NONCE
+              }
+     
+              obj←shape,num ⍺{1↑⍺:cmpv ⍵ ⋄ ⎕ML←1 ⋄ ⎕IO←0 ⋄ QU←{Q,((1+t=Q)/t←⍵),Q←''''}
+             ⍝ We have to assume not all characters are available. Those should be:
+                  Always←⎕A,⎕D,'abcdefghijklmnopqrstuvwxyz_.,:;%!"/=\-+''#$£¢^¿¡(){}[]§@`∣¶&'
+                  Always,←'ÁÂÃÇÈÊËÌÍÎÏÐÒÓÔÕÙÚÛÝþãìðòõÀÄÅÆÉÑÖØÜßàáâäåæçèéêëíîïñùúûüóôöø'
+                  Always,←'≤≥⌿⍀<>≠∨∧÷×?∊⍴~↑↓⍳○*⌈⌷¨⌊∇∆⍙⍨∘⊂⊃∩∪⊥⊤⌶|⍺⍵¯⍬⍱⍲⍒⍋⍉⌽⊖⍟⌹⍕⍎⍫⍪≡≢⍷⋄←→⍝⎕⍞⍣ '
+                  u←80=⎕DR''
+                  Always,←'⊢⊣',⎕UCS u/8838 9016 9018 9056 9060 9080 ⍝ ⊂_ ⎕= ⎕⋄ ⎕: ∘¨ ⍳_
+                  Always,←⎕UCS 9061/⍨u∧18≤1 0⊃'.'⎕VFI 1⊃# ⎕WG'APLVersion' ⍝ ○¨
+                  ∧/t←⍵∊Always:QU ⍵ ⍝ no special chars?
+                 ⍝ If only a few chars transform the whole string into ⎕AV
+                  UCS←{1⌽')(⎕ucs ',⍕cmpv ⎕UCS ⍵}
+                 ⍝ More than a few; create a mixture of ⎕UCS and 'quotes'
+                  minsize←3 ⍝ how much special chars to include between sections; that number is subjective
+                  c∨←minsize>∊⍴¨c←ucs⊂⍨c←1,1↓ucs≠¯1⌽ucs←~t ⍝ consider small groups of ASCII as UCS
+                 ⍝ ∧/sc←∊c:ucs ⍵ ⍝ are the pieces small enough to be all in ⎕UCS?
+                  (lp rp)←'()'/⍨¨(1↓⍺)∧1<+/c←1,1↓ucs≠¯1⌽ucs←∊c
+                  rp,⍨lp,∊{⍺,',',⍵}/(c/ucs){⍺:UCS ⍵ ⋄ QU ⍵}¨c⊂⍵
+              }obj
+              lp,obj,rp
+          }⍵
+          ⎕CT←⎕DCT←0
+          ⍵≡⍎expr:expr
+          ⎕SIGNAL⊂('EN' 16)('Message' 'Generated expression did not match argument')⍝ NONCE
+      }
+
+    ∇ py←ExportPy;bin;nl
+     ⍝ Serialise and compress this namespace and embed in python string
+     ⍝ The string contains APL expressions executed in dyalog.run to define T and Test in ⎕SE
+      bin←⊃⌽2(219⌶)1(220⌶)⎕THIS
+      nl←⎕UCS 10
+      py←'# This is generated by Test.ExportPy in test_framework/Test.apln',nl
+      py,←'test_namespace = """T←⍬',nl
+      py,←∊('T,←'∘,∘⍕¨((≢bin)⍴150↑1)⊂bin),¨nl
+      py,←'"""',nl
+      py,←'import_test_ns = "Test←0(220⌶)¯2(219⌶)T"',nl
+      py,←'setup_framework = "⎕CS ⎕SE\n" + test_namespace + "\n" + import_test_ns + "\n⎕CS #\n"',nl
+      py,←'# Set up test framework in ⎕SE. User code is fixed in #. Hope nothing goes wrong with namespace references when running the user''s solution...',nl
+    ∇
+
+:EndNamespace

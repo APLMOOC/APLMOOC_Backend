@@ -1,0 +1,14 @@
+ Ranking←{
+⍝ Complete reference solution  
+     ⍺←1
+     GetWeights←{
+         0=⊃0⍴⍵:⍵
+         tn←⍵ ⎕NTIE 0
+         r←⎕NREAD tn 83 ¯1
+         r⊣⎕NUNTIE tn
+     }
+     w←GetWeights ⍺
+     (t h)←⎕CSV ⍵ ⍬ 4 1
+     T←{t[;h⍳⊆⍵]}
+     (T'name')[⍒w×T'score']
+ }

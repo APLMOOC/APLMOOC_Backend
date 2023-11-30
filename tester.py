@@ -28,14 +28,14 @@ async def run_tests(code: str, tests: dict) -> dict:
 
     Arguments:
     code - the APL code to run
-    tests - dict of options as described in test_framework/READEME.md
+    tests - dict of options as described in test_framework/README.md
 
     Outputs:
     A dict containing information about the test run
     """
     # Wrap user code in text definition
     APLString = lambda s: json.dumps("''".join(s.split("'")))
-    user_code = "\nuser_code←0⎕JSON'" + APLString(code) + "'\n"
+    user_code = f"\nuser_code←0⎕JSON' + APLString(code) + "'\n"
     test_opts = "\nopts←0⎕JSON'" + "''".join(json.dumps(tests).split("'")) + "'\n"
     
     # Bundle test framework, user code and execution expression as a string
@@ -56,14 +56,14 @@ async def run_tests(code: str, tests: dict) -> dict:
                 "Passed basic tests, well done. For extra points, consider cases like ",
                 "Congratulations! All tests passed. "]
     msg = feedback[output["status"]]
-    if 2 > output["status"]:
+    if output["status"] < 2:
         if "error" in output:
             msg += "An error occured. " + output["report"]
         if "larg" in output:
             msg += output["larg"] + " as left argument and "
         if "rarg" in output:
             msg += output["rarg"] + " as right argument."
-    return msg + "\n"
+    return True, msg + "\n"
 
 # Tests
 if __name__ == "__main__":

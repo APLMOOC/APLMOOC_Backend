@@ -35,7 +35,7 @@ async def run_tests(code: str, tests: dict) -> dict:
     """
     # Wrap user code in text definition
     APLString = lambda s: json.dumps("''".join(s.split("'")))
-    user_code = f"\nuser_code←0⎕JSON' + APLString(code) + "'\n"
+    user_code = f"\nuser_code←0⎕JSON'" + APLString(code) + "'\n"
     test_opts = "\nopts←0⎕JSON'" + "''".join(json.dumps(tests).split("'")) + "'\n"
     
     # Bundle test framework, user code and execution expression as a string

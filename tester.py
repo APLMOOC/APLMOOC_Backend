@@ -53,7 +53,7 @@ async def run_tests(code: str, tests: dict) -> dict:
     #print("\n\n"+base["stderr"])
     output = json.loads(base["stdout"])
     feedback = ["Basic test failed. ",
-                "Passed basic tests, well done. For extra points, consider cases like ",
+                "Passed basic tests, well done! For extra points, consider cases like ",
                 "Congratulations! All tests passed. "]
     msg = feedback[output["status"]]
     if output["status"] < 2:

@@ -2,5 +2,6 @@ version: "3.9"
 services:
   web:
     build: .
+    image: aplmooc_backend:v1
     ports:
       - "5000:5000"

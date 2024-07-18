@@ -5,6 +5,7 @@ from websockets import connect
 from enum import Enum, auto
 from test_framework.test_namespace import setup_framework
 
+
 async def run_apl(code: str) -> str:
     """
     Safely runs arbitrary APL code using the dyalog.run service
@@ -21,6 +22,7 @@ async def run_apl(code: str) -> str:
         response = msgpack.unpackb(response_raw, raw=False, use_list=False)
         response.update({"stdout" : response["stdout"].decode(), "stderr" : response["stderr"].decode()})
         return response
+
 
 async def run_tests(code: str, tests: dict) -> dict:
     """
@@ -64,6 +66,7 @@ async def run_tests(code: str, tests: dict) -> dict:
         if "rarg" in output:
             msg += output["rarg"] + " as right argument."
     return True, msg + "\n"
+
 
 # Tests
 if __name__ == "__main__":

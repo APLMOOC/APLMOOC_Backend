@@ -1,36 +1,29 @@
-from flask import Flask
-from flask import request
-from flask import render_template
-from flask import g
+from flask import (
+    Blueprint, render_template, request
+)
 import asyncio
-import tester
-import database
+from . import tester
+from . import database
 
-app = Flask(__name__)
-
-
-@app.teardown_appcontext
-def close_connection(exception):
-    db = getattr(g, "_database", None)
-    if db is not None:
-        db.close()
+bp = Blueprint("endpoints", __name__, url_prefix="/")
 
 
-@app.route("/")
+@bp.route("/")
 def index():
     return render_template("index.html")
 
 
-@app.route("/get")
+@bp.route("/get")
 def get():
     return "\n".join([str(a) for a in database.query_db("SELECT uid, SUM(points) FROM Points GROUP BY uid")])
 
 
-@app.route("/submit", methods=["POST"])
+@bp.route("/submit", methods=["POST"])
 def submit():
     pid = request.form.get("pid")
     uid = request.form.get("uid")
     code = request.form.get("code")
+    print(pid,uid,code)
 
     if not all((pid,uid,code)):
         return "Bad request", 400
@@ -48,7 +41,3 @@ def submit():
         return "All tests passed! Points have been awarded on the server.\n"
     else:
         return f"Tests failed!\n{value}"
-
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)

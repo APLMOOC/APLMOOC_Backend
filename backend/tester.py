@@ -2,7 +2,6 @@ import json
 import asyncio
 import msgpack
 from websockets import connect
-from enum import Enum, auto
 from test_framework.test_namespace import setup_framework
 
 
@@ -44,15 +43,11 @@ async def run_tests(code: str, tests: dict) -> dict:
     test = setup_framework + user_code + test_opts + "⎕←1⎕JSON opts ⎕SE.Test.Run user_code"
     # Response → dict
     base = await run_apl(test)
-    #print(base)
     if base["timed_out"]:
         return False, "Execution timed out (5s)"
     if base["status_value"] != 0:
-        print(base["stderr"])
         return False, base["stderr"]
 
-    #print("\n\n"+base["stdout"])
-    #print("\n\n"+base["stderr"])
     output = json.loads(base["stdout"])
     feedback = ["Basic test failed. ",
                 "Passed basic tests, well done! For extra points, consider cases like ",

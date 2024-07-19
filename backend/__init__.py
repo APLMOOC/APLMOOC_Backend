@@ -22,11 +22,13 @@ def create_app():
 
     app.config.from_mapping(
         SECRET_KEY=key,
-        DATABASE=os.path.join(app.instance_path, "points.sqlite"),
+        SQLALCHEMY_DATABASE_URI="sqlite:///points.db",
     )
 
     from . import database
-    database.init_app(app)
+    database.db.init_app(app)
+    with app.app_context():
+        database.db.create_all()
 
     from . import endpoints
     app.register_blueprint(endpoints.bp)

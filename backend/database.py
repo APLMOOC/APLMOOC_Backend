@@ -1,49 +1,32 @@
-from flask import current_app, g
-import sqlite3
-import click
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import UniqueConstraint
+from sqlalchemy.sql import func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-def init_db(db):
-    with open("schema.sql", "r") as f:
-        db.cursor().executescript(f.read())
-    db.commit()
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
 
 
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(current_app.config["DATABASE"])
-        init_db(db)
-    return db
+class Points(db.Model):
+    id: Mapped[int] = mapped_column(primary_key=True)
+    id_user: Mapped[int] = mapped_column()
+    id_problem: Mapped[int] = mapped_column()
+    points: Mapped[int] = mapped_column()
+    __table_args__ = (UniqueConstraint("id_user", "id_problem", name="unique_user_problem"),)
 
 
-def close_connection(exception=None):
-    db = getattr(g, "_database", None)
-    if db is not None:
-        db.close()
+def get_all_points():
+    return db.session.execute(db.select(Points.id_user, func.sum(Points.points)).group_by(Points.id_user)).scalars()
 
 
-@click.command("init-db")
-def init_db_command():
-    """Clear the existing data and create new tables."""
-    db = get_db()
-    init_db(db)
-    click.echo("Initialized the database.")
-
-
-def init_app(app):
-    app.teardown_appcontext(close_connection)
-    app.cli.add_command(init_db_command)
-
-
-def query_db(query, args=(), one=False):
-    cur = get_db().execute(query, args)
-    rv = cur.fetchall()
-    cur.close()
-    return (rv[0] if rv else None) if one else rv
-
-
-def insert_db(query, args=()):
-    db = get_db()
-    db.execute(query, args)
-    db.commit()
+def insert_points(id_user: int, id_problem: int, points: int):
+    to_add = Points(
+        id_user = id_user,
+        id_problem = id_problem,
+        points = points,
+    )
+    db.session.add(to_add)
+    db.session.commit()

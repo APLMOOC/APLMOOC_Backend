@@ -8,25 +8,27 @@ from . import database
 bp = Blueprint("endpoints", __name__, url_prefix="/")
 
 
-@bp.route("/")
+@bp.route("/", methods=("GET",))
 def index():
     return render_template("index.html")
 
 
-@bp.route("/get")
+@bp.route("/get", methods=("GET",))
 def get():
-    return "\n".join([str(a) for a in database.query_db("SELECT uid, SUM(points) FROM Points GROUP BY uid")])
+    return database.get_all_points()
 
 
-@bp.route("/submit", methods=["POST"])
+@bp.route("/submit", methods=("POST",))
 def submit():
     pid = request.form.get("pid")
     uid = request.form.get("uid")
     code = request.form.get("code")
-    print(pid,uid,code)
 
     if not all((pid,uid,code)):
         return "Bad request", 400
+    
+    database.insert_points(uid, pid, 1)
+    return
 
     # Run demo test for the ⍴ function
     result, value = asyncio.run(tester.run_tests(code, 

@@ -1,6 +1,0 @@
-Flask
-Flask-SQLAlchemy
-asyncio
-msgpack
-websockets
-gunicorn

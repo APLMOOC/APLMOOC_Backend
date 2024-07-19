@@ -19,14 +19,31 @@ class Points(db.Model):
 
 
 def get_all_points():
-    return db.session.execute(db.select(Points.id_user, func.sum(Points.points)).group_by(Points.id_user)).scalars()
+    return db.session.execute(
+        db.select(Points.id_user, func.sum(Points.points))
+        .group_by(Points.id_user)
+    ).all()
 
 
 def insert_points(id_user: int, id_problem: int, points: int):
-    to_add = Points(
-        id_user = id_user,
-        id_problem = id_problem,
-        points = points,
-    )
-    db.session.add(to_add)
+    current = db.session.execute(
+        db.select(Points)
+        .where(Points.id_user==id_user)
+        .where(Points.id_problem==id_problem)
+    ).scalar()
+
+    if current is None:
+        to_add = Points(
+            id_user = id_user,
+            id_problem = id_problem,
+            points = points,
+        )
+        db.session.add(to_add)
+        db.session.commit()
+        return
+    
+    if current.points >= points:
+        return
+    
+    current.points = points
     db.session.commit()

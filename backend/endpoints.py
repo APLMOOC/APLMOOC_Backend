@@ -15,7 +15,8 @@ def index():
 
 @bp.route("/get", methods=("GET",))
 def get():
-    return database.get_all_points()
+    res = database.get_all_points()
+    return str(res), 200
 
 
 @bp.route("/submit", methods=("POST",))
@@ -27,8 +28,8 @@ def submit():
     if not all((pid,uid,code)):
         return "Bad request", 400
     
-    database.insert_points(uid, pid, 1)
-    return
+    database.insert_points(uid, pid, int(code))
+    return "OK", 200
 
     # Run demo test for the ⍴ function
     result, value = asyncio.run(tester.run_tests(code, 

@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 import os
 import secrets
 
@@ -32,5 +32,21 @@ def create_app():
 
     from . import endpoints
     app.register_blueprint(endpoints.bp)
+
+    @app.errorhandler(404)
+    def error_404(e):
+        return jsonify(error=str(e)), 404
+
+    @app.errorhandler(405)
+    def error_405(e):
+        return jsonify(error=str(e)), 405
+
+    @app.errorhandler(415)
+    def error_415(e):
+        return jsonify(error=str(e)), 415
+
+    @app.errorhandler(500)
+    def error_500(e):
+        return jsonify(error=str(e)), 500
 
     return app

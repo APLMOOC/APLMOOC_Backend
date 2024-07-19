@@ -28,9 +28,6 @@ def submit():
     if not all((pid,uid,code)):
         return "Bad request", 400
     
-    database.insert_points(uid, pid, int(code))
-    return "OK", 200
-
     # Run demo test for the ⍴ function
     result, value = asyncio.run(tester.run_tests(code, 
                                 [("2 2","⍳4","1 2\n3 4\n"),
@@ -39,8 +36,7 @@ def submit():
                                 ]))
     
     if result:
-        database.insert_db("INSERT OR IGNORE INTO Points (uid, pid, points) VALUES (?, ?, ?)", (uid,pid,1))
-        database.insert_db("UPDATE Points SET points=? WHERE uid=? AND pid=?", (1,uid,pid))
+        database.insert_points(uid, pid, 1)
         return "All tests passed! Points have been awarded on the server.\n"
     else:
         return f"Tests failed!\n{value}"

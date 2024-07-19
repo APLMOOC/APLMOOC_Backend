@@ -1,5 +1,5 @@
 from flask import (
-    Blueprint, render_template, request
+    Blueprint, render_template, request, abort
 )
 import asyncio
 
@@ -11,23 +11,23 @@ bp = Blueprint("endpoints", __name__, url_prefix="/")
 
 @bp.route("/", methods=("GET",))
 def index():
-    return render_template("index.html")
+    return {"message": "success"}, 200
 
 
 @bp.route("/get", methods=("GET",))
 def get():
     res = database.get_all_points()
-    return str(res), 200
+    return {"points": res}, 200
 
 
 @bp.route("/submit", methods=("POST",))
 def submit():
-    pid = request.form.get("pid")
-    uid = request.form.get("uid")
-    code = request.form.get("code")
+    id_problem = request.json.get("id_problem")
+    id_user = request.json.get("id_user")
+    code = request.json.get("code")
 
-    if not all((pid,uid,code)):
-        return "Bad request", 400
+    if not all((id_problem, id_user, code)):
+        abort(400)
     
     # Run demo test for the ⍴ function
     result, value = asyncio.run(tester.run_tests(code, 
@@ -37,7 +37,7 @@ def submit():
                                 ]))
     
     if result:
-        database.insert_points(uid, pid, 1)
-        return "All tests passed! Points have been awarded on the server.\n"
+        database.insert_points(id_user, id_problem, 1)
+        return {"message": "All tests passed! Points have been awarded on the server."}, 200
     else:
-        return f"Tests failed!\n{value}"
+        return {"message": "Tests failed!", "result": value}, 200

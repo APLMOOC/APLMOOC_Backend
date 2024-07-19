@@ -33,6 +33,10 @@ def create_app():
     from . import endpoints
     app.register_blueprint(endpoints.bp)
 
+    @app.errorhandler(400)
+    def error_400(e):
+        return jsonify(error=str(e)), 400
+
     @app.errorhandler(404)
     def error_404(e):
         return jsonify(error=str(e)), 404

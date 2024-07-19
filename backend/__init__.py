@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask
 import os
 import secrets
 
@@ -35,22 +35,22 @@ def create_app():
 
     @app.errorhandler(400)
     def error_400(e):
-        return jsonify(error=str(e)), 400
+        return {"error": "Bad Request"}, 400
 
     @app.errorhandler(404)
     def error_404(e):
-        return jsonify(error=str(e)), 404
+        return {"error": "Not Found"}, 404
 
     @app.errorhandler(405)
     def error_405(e):
-        return jsonify(error=str(e)), 405
+        return {"error": "Method Not Allowed"}, 405
 
     @app.errorhandler(415)
     def error_415(e):
-        return jsonify(error=str(e)), 415
+        return {"error": "Unsupported Media Type"}, 415
 
     @app.errorhandler(500)
     def error_500(e):
-        return jsonify(error=str(e)), 500
+        return {"error": "Interal Server Error"}, 500
 
     return app

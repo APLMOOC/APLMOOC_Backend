@@ -18,8 +18,8 @@ def index():
 
 @bp.route("/get", methods=("GET",))
 def get():
-    res = database.get_all_points()
-    return {"points": res}, 200
+    points = database.get_all_points()
+    return {"points": points}, 200
 
 
 @bp.route("/submit", methods=("POST",))

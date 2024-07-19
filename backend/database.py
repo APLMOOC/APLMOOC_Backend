@@ -11,6 +11,10 @@ db = SQLAlchemy(model_class=Base)
 
 
 class Points(db.Model):
+    """
+    The model for the Points database table
+    """
+
     id: Mapped[int] = mapped_column(primary_key=True)
     id_user: Mapped[int] = mapped_column()
     id_problem: Mapped[int] = mapped_column()
@@ -18,14 +22,32 @@ class Points(db.Model):
     __table_args__ = (UniqueConstraint("id_user", "id_problem", name="unique_user_problem"),)
 
 
-def get_all_points():
-    return db.session.execute(
+def get_all_points() -> dict:
+    """
+    Gets all the point totals per user from the database.
+
+    Returns:
+        dict: A dictionary containing the user IDs as the keys and their total number of points as the values
+    """
+
+    results =  db.session.execute(
         db.select(Points.id_user, func.sum(Points.points))
         .group_by(Points.id_user)
     ).all()
 
+    return [{row[0]: row[1]} for row in results]
+
 
 def insert_points(id_user: int, id_problem: int, points: int):
+    """
+    Award a user a certain number of points for a specific problem.
+    If the number of points to award is less than what the user already has, nothing happens.
+
+    Args:
+        id_user (int): The user ID
+        id_problem (int): The problem ID
+        points (int): The number of points to award
+    """
     current = db.session.execute(
         db.select(Points)
         .where(Points.id_user==id_user)

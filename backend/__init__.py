@@ -3,6 +3,13 @@ import os
 import secrets
 
 def create_app():
+    """
+    Application factory for the APLMOOC_Backend application.
+
+    Returns:
+        Flask: the Flask application to run
+    """
+    
     app = Flask(__name__, instance_relative_config=True)
 
     try:

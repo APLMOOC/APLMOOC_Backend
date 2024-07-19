@@ -5,10 +5,17 @@ from websockets import connect
 from test_framework.test_namespace import setup_framework
 
 
-async def run_apl(code: str) -> str:
+async def run_apl(code: str) -> dict:
     """
-    Safely runs arbitrary APL code using the dyalog.run service
+    Safely runs arbitrary APL code using the dyalog.run service.
+
+    Args:
+        code (str): The APL code to run
+    
+    Returns:
+        dict: The parsed response from the dyalog.run service
     """
+
     async with connect("wss://dyalog.run/api/v0/ws/execute") as websocket:
         payload = msgpack.packb({
             "language" : "dyalog_apl",
@@ -27,31 +34,39 @@ async def run_tests(code: str, tests: dict) -> dict:
     """
     Run a set of tests on APL code
 
-    Arguments:
-    code - the APL code to run
-    tests - dict of options as described in test_framework/README.md
+    Args:
+        code (str): The APL code to run
+        tests (dict): A dictionary of options as described in test_framework/README.md
 
-    Outputs:
-    A dict containing information about the test run
+    Returns:
+        bool: Whether the code run succeeded or not. A value of `True` indicates that no errors were encountered, and not that all tests have been passed.
+        dict: Information about the test run
     """
+
     # Wrap user code in text definition
-    APLString = lambda s: json.dumps("''".join(s.split("'")))
-    user_code = f"\nuser_code←0⎕JSON'" + APLString(code) + "'\n"
-    test_opts = "\nopts←0⎕JSON'" + "''".join(json.dumps(tests).split("'")) + "'\n"
+    code_aplstring = code.replace("'", "''")
+    tests_aplstring = json.dumps(tests).replace("'", "''")
+    user_code = f"\nuser_code←0⎕JSON'{code_aplstring}'\n"
+    test_opts = f"\nopts←0⎕JSON'{tests_aplstring}'\n"
     
     # Bundle test framework, user code and execution expression as a string
     test = setup_framework + user_code + test_opts + "⎕←1⎕JSON opts ⎕SE.Test.Run user_code"
-    # Response → dict
-    base = await run_apl(test)
-    if base["timed_out"]:
-        return False, "Execution timed out (5s)"
-    if base["status_value"] != 0:
-        return False, base["stderr"]
 
-    output = json.loads(base["stdout"])
+    # Test the code using dyalog.run
+    response = await run_apl(test)
+
+    # Parse the response data
+    if response["timed_out"]:
+        return False, "Execution timed out (5s)"
+    
+    if response["status_value"] != 0:
+        return False, response["stderr"]
+
+    output = json.loads(response["stdout"])
     feedback = ["Basic test failed. ",
                 "Passed basic tests, well done! For extra points, consider cases like ",
                 "Congratulations! All tests passed. "]
+    
     msg = feedback[output["status"]]
     if output["status"] < 2:
         if "error" in output:
@@ -60,7 +75,8 @@ async def run_tests(code: str, tests: dict) -> dict:
             msg += output["larg"] + " as left argument and "
         if "rarg" in output:
             msg += output["rarg"] + " as right argument."
-    return True, msg + "\n"
+    
+    return True, msg
 
 
 # Tests

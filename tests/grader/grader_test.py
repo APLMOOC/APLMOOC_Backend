@@ -21,9 +21,9 @@ class TestGrader(unittest.TestCase):
 
         response = helper.submit_code(self.client, "tests/grader/Ranking.aplf")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json, {
+        self.assertDictEqual(response.json, {
             "feedback": "Passed basic tests, well done! For extra points, consider cases like 'weights' as left argument and 'table.csv' as right argument.",  # pylint: disable=line-too-long
-            "message": "Code successfully executed!"
+            "message": "Code successfully executed!",
         })
 
     def test_ranking_full(self):
@@ -33,9 +33,9 @@ class TestGrader(unittest.TestCase):
 
         response = helper.submit_code(self.client, "tests/grader/RankingFull.aplf")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json, {
+        self.assertDictEqual(response.json, {
             "feedback": "Congratulations! All tests passed. ",
-            "message": "Code successfully executed!"
+            "message": "Code successfully executed!",
         })
 
     def test_ranking_prohibited(self):
@@ -45,7 +45,29 @@ class TestGrader(unittest.TestCase):
 
         response = helper.submit_code(self.client, "tests/grader/RankingProh.aplf")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json, {
-            "feedback": "Basic test failed. An error occured. ⌸ found in source, which is prohibited for this problem.",  # pylint: disable=line-too-long
-            "message": "Code successfully executed!"
+        self.assertDictEqual(response.json, {
+            "feedback": "Basic test failed. An error occurred. ⌸ found in source, which is prohibited for this problem.",  # pylint: disable=line-too-long
+            "message": "Code successfully executed!",
         })
+
+    def test_ranking_timeout(self):
+        """
+        Test an incorrect submission, which fails due to timing out (infinite loop).
+        """
+
+        response = helper.submit_code(self.client, "tests/grader/RankingTimeout.aplf")
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(response.json, {
+            "feedback": "Execution timed out (5s)",
+            "message": "Tests failed!",
+        })
+
+    def test_ranking_error(self):
+        """
+        Test an incorrect submission, which fails due to a syntax error.
+        """
+
+        response = helper.submit_code(self.client, "tests/grader/RankingError.aplf")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["message"], "Code successfully executed!")
+        self.assertIn("An error occurred.", response.json["feedback"])

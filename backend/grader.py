@@ -84,7 +84,7 @@ async def evaluate(code: str, options: dict) -> tuple[bool, dict]:
     msg = feedback[output["status"]]
     if output["status"] < 2:
         if "error" in output:
-            msg += "An error occured. " + output["report"]
+            msg += "An error occurred. " + output["report"]
         if "larg" in output:
             msg += output["larg"] + " as left argument and "
         if "rarg" in output:

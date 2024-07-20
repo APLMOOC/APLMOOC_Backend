@@ -51,7 +51,7 @@ def get():
             type: object
             properties:
                 id_user:
-                    type: int
+                    type: string
                 points:
                     type: int
     responses:
@@ -60,7 +60,7 @@ def get():
             schema:
                 $ref: '#/definitions/Points'
             examples:
-                example: [{"id_user": 1, "points": 2}, {"id_user": 3, "points": 7}]
+                example: [{"id_user": "1", "points": "2"}, {"id_user": "3", "points": "7"}]
     """
 
     points = database.get_all_points()
@@ -78,12 +78,12 @@ def submit():
         - name: id_problem
           description: The ID of the problem to test
           in: body
-          type: int
+          type: string
           required: true
         - name: id_user
           description: The ID of the user submitting the request
           in: body
-          type: int
+          type: string
           required: true
         - name: code_encoded
           description: The APL code to test, encoded as a base64 string

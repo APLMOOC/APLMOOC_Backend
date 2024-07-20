@@ -57,8 +57,8 @@ class TestBasics(unittest.TestCase):
         """
 
         response = self.client.post("/submit", data=json.dumps({
-            "id_user": 1,
-            "id_problem": 1,
+            "id_user": "1",
+            "id_problem": "1",
             "code_encoded": "4o20Cg=="
         }))
         self.assertEqual(response.status_code, 415)

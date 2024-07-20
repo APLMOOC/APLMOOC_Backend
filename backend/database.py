@@ -26,8 +26,8 @@ class Points(db.Model):  # pylint: disable=too-few-public-methods
     """
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    id_user: Mapped[int] = mapped_column()
-    id_problem: Mapped[int] = mapped_column()
+    id_user: Mapped[str] = mapped_column()
+    id_problem: Mapped[str] = mapped_column()
     points: Mapped[int] = mapped_column()
     __table_args__ = (UniqueConstraint("id_user", "id_problem", name="unique_user_problem"),)
 
@@ -51,14 +51,14 @@ def get_all_points() -> list:
     } for row in results]
 
 
-def insert_points(id_user: int, id_problem: int, points: int):
+def insert_points(id_user: str, id_problem: str, points: int):
     """
     Award a user a certain number of points for a specific problem.
     If the number of points to award is less than what the user already has, nothing happens.
 
     Args:
-        id_user (int): The user ID
-        id_problem (int): The problem ID
+        id_user (str): The user ID
+        id_problem (str): The problem ID
         points (int): The number of points to award
     """
 

@@ -1,16 +1,27 @@
 from flask import Flask
 import os
 import secrets
+import shutil
 
-def create_app():
+def create_app(testing=False):
     """
     Application factory for the APLMOOC_Backend application.
+
+    Args:
+        testing (bool, optional): Indicates whether to create a new, empty instance for testing purposes. Defaults to `False`.
 
     Returns:
         Flask: the Flask application to run
     """
     
-    app = Flask(__name__, instance_relative_config=True)
+    instance_folder = "instance" if not testing else "instance_test"
+    app = Flask(__name__, instance_path=os.path.join(os.getcwd(), instance_folder))
+    
+    if testing:
+        try:
+            shutil.rmtree(app.instance_path)
+        except FileNotFoundError:
+            pass
 
     try:
         os.makedirs(app.instance_path)
@@ -28,6 +39,7 @@ def create_app():
             f.write(key)
 
     app.config.from_mapping(
+        TESTING=testing,
         SECRET_KEY=key,
         SQLALCHEMY_DATABASE_URI="sqlite:///points.db",
     )

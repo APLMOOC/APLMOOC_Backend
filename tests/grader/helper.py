@@ -3,7 +3,7 @@
 import base64
 
 
-def submit_code(client, path: str, id_user: str = "1", id_problem: str = "1"):
+def submit_code(client, path: str, id_user: str = "1", id_problem: str = "ch0_p0_example1"):
     """
     Helper function used to submit a piece of APL code to the grader
     and return the response.

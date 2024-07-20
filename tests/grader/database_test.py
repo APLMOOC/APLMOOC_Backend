@@ -21,12 +21,12 @@ class TestDatabase(unittest.TestCase):
         """
 
         helper.submit_repeated_correct(self.client, (
-            ("1", "1"),
-            ("1", "2"),
-            ("1", "3"),
-            ("2", "1"),
-            ("2", "5"),
-            ("3", "9"),
+            ("1", "ch0_p0_example1"),
+            ("1", "ch0_p0_example2"),
+            ("1", "ch0_p0_example3"),
+            ("2", "ch0_p0_example1"),
+            ("2", "ch0_p0_example3"),
+            ("3", "ch0_p0_example3"),
         ))
 
         response = self.client.get("/get")
@@ -42,14 +42,14 @@ class TestDatabase(unittest.TestCase):
         """Test that repeatedly adding points only awards them once."""
 
         helper.submit_repeated_correct(self.client, (
-            ("1", "1"),
-            ("1", "1"),
-            ("1", "1"),
-            ("1", "1"),
-            ("1", "2"),
-            ("2", "1"),
-            ("2", "5"),
-            ("3", "9"),
+            ("1", "ch0_p0_example1"),
+            ("1", "ch0_p0_example1"),
+            ("1", "ch0_p0_example1"),
+            ("1", "ch0_p0_example1"),
+            ("1", "ch0_p0_example2"),
+            ("2", "ch0_p0_example1"),
+            ("2", "ch0_p0_example3"),
+            ("3", "ch0_p0_example3"),
         ))
 
         response = self.client.get("/get")

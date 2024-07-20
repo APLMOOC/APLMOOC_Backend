@@ -6,6 +6,8 @@ functions do not validate their input; ensure that all
 IDs and points are valid in the functions calling the database functions.
 """
 
+import os
+import json
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.sql import func
@@ -30,6 +32,70 @@ class Points(db.Model):  # pylint: disable=too-few-public-methods
     id_problem: Mapped[str] = mapped_column()
     points: Mapped[int] = mapped_column()
     __table_args__ = (UniqueConstraint("id_user", "id_problem", name="unique_user_problem"),)
+
+
+class Problems(db.Model):  # pylint: disable=too-few-public-methods
+    """
+    The model for the Problems database table.
+    """
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    id_problem: Mapped[str] = mapped_column(unique=True)
+    config: Mapped[str] = mapped_column()
+
+
+def init_problems():
+    """
+    Reads the available problems and stores them in the Problems table.
+    """
+
+    db.session.query(Problems).delete()
+    db.session.commit()
+
+    problem_files = [
+        os.path.join("problems", file) for file in os.listdir("problems")
+        if os.path.isfile(os.path.join("problems", file))
+        and os.path.splitext(file)[-1].lower() == ".json"
+    ]
+
+    for filename in problem_files:
+        with open(filename, "r", encoding="utf-8") as f:
+            problem_config = json.load(f)
+
+        id_problem = problem_config.get("id")
+        if id_problem is None:
+            continue
+
+        db.session.add(Problems(
+            id_problem = id_problem,
+            config = json.dumps(problem_config),
+        ))
+
+    db.session.commit()
+
+
+def get_problem_config(id_problem: str) -> dict | None:
+    """
+    Returns the problem configuration for a certain problem from the Problems table.
+
+    Args:
+        id_problem (str): The problem ID
+    
+    Returns:
+        dict:
+            The parsed JSON data from the configuration file,
+            or None if the problem ID is not found
+    """
+
+    result = db.session.execute(
+        db.select(Problems.config)
+        .where(Problems.id_problem==id_problem)
+    ).scalar()
+
+    if result is None:
+        return None
+
+    return json.loads(result)
 
 
 def get_all_points() -> list:
@@ -69,12 +135,11 @@ def insert_points(id_user: str, id_problem: str, points: int):
     ).scalar()
 
     if current is None:
-        to_add = Points(
+        db.session.add(Points(
             id_user = id_user,
             id_problem = id_problem,
             points = points,
-        )
-        db.session.add(to_add)
+        ))
         db.session.commit()
         return
 

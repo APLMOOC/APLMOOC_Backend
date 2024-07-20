@@ -6,7 +6,6 @@ Swagger documentation can be generated from the function docstrings.
 """
 
 import asyncio
-import json
 import base64
 from flask import (
     Blueprint, request, abort
@@ -111,6 +110,8 @@ def submit():
                 failed_prohibited: {"feedback": "Basic test failed. An error occured. ⌸ found in source, which is prohibited for this problem.", "message": "Code successfully executed!"}
     """  # pylint: disable=line-too-long
 
+    # Read and parse parameters
+
     id_problem = request.json.get("id_problem")
     id_user = request.json.get("id_user")
     code_encoded = request.json.get("code_encoded")
@@ -118,13 +119,15 @@ def submit():
     if not all((id_problem, id_user, code_encoded)):
         abort(400)
 
-    # Run demo grading
-
     code = base64.b64decode(code_encoded).decode("utf-8")
-    with open("tests/grader/example.json", "r", encoding="utf-8") as f:
-        demo_config = json.load(f)
+    config = database.get_problem_config(id_problem)
 
-    result, feedback = asyncio.run(grader.evaluate(code, demo_config))
+    if config is None:
+        abort(400)
+
+    # Run grader evaluation
+
+    result, feedback = asyncio.run(grader.evaluate(code, config))
 
     if result:
         database.insert_points(id_user, id_problem, 1)

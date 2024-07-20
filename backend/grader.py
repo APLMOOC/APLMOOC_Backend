@@ -2,7 +2,7 @@ import json
 import asyncio
 import msgpack
 from websockets import connect
-from test_framework.test_namespace import setup_framework
+from grader.grader_namespace import setup_framework
 
 
 async def run_apl(code: str) -> dict:
@@ -30,30 +30,30 @@ async def run_apl(code: str) -> dict:
         return response
 
 
-async def run_tests(code: str, tests: dict) -> dict:
+async def evaluate(code: str, options: dict) -> dict:
     """
-    Run a set of tests on APL code
+    Evaluate an APL code submission
 
     Args:
         code (str): The APL code to run
-        tests (dict): A dictionary of options as described in test_framework/README.md
+        options (dict): A dictionary of options as described in grader/README.md
 
     Returns:
         bool: Whether the code run succeeded or not. A value of `True` indicates that no errors were encountered, and not that all tests have been passed.
-        dict: Information about the test run
+        dict: Information about the evaluation
     """
 
     # Wrap user code in text definition
     code_aplstring = code.replace("'", "''")
-    tests_aplstring = json.dumps(tests).replace("'", "''")
-    user_code = f"\nuser_code←0⎕JSON'{code_aplstring}'\n"
-    test_opts = f"\nopts←0⎕JSON'{tests_aplstring}'\n"
+    options_aplstring = json.dumps(options).replace("'", "''")
+    code_aplcode = f"\nuser_code←0⎕JSON'{code_aplstring}'\n"
+    options_aplcode = f"\nopts←0⎕JSON'{options_aplstring}'\n"
     
-    # Bundle test framework, user code and execution expression as a string
-    test = setup_framework + user_code + test_opts + "⎕←1⎕JSON opts ⎕SE.Test.Run user_code"
+    # Bundle grader framework, user code and execution options as a string
+    submission = setup_framework + code_aplcode + options_aplcode + "⎕←1⎕JSON opts ⎕SE.Test.Run user_code"
 
-    # Test the code using dyalog.run
-    response = await run_apl(test)
+    # Evaluate the code using dyalog.run
+    response = await run_apl(submission)
 
     # Parse the response data
     if response["timed_out"]:
@@ -77,13 +77,3 @@ async def run_tests(code: str, tests: dict) -> dict:
             msg += output["rarg"] + " as right argument."
     
     return True, msg
-
-
-# Tests
-if __name__ == "__main__":
-    with open("test_framework/example.json", encoding="utf-8") as f:
-        eg_test = json.load(f)
-    for test in ["Ranking.aplf", "RankingProh.aplf", "RankingFull.aplf"]:
-        with open("test_framework/" + test, encoding="utf-8") as f:
-            user_sub = f.read()
-        print(asyncio.run(run_tests(user_sub, eg_test)))

@@ -5,7 +5,7 @@ import asyncio
 import json
 import base64
 
-from . import tester
+from . import grader
 from . import database
 
 bp = Blueprint("endpoints", __name__, url_prefix="/")
@@ -31,13 +31,13 @@ def submit():
     if not all((id_problem, id_user, code_encoded)):
         abort(400)
 
-    # Run demo tests
+    # Run demo grading
 
     code = base64.b64decode(code_encoded).decode("utf-8")
-    with open("test_framework/example.json", "r") as f:
+    with open("tests/grader/example.json", "r") as f:
         demo_config = json.load(f)
     
-    result, feedback = asyncio.run(tester.run_tests(code, demo_config))
+    result, feedback = asyncio.run(grader.evaluate(code, demo_config))
     print(result, feedback)
 
     if result:

@@ -73,7 +73,7 @@ async def evaluate(code: str, options: dict) -> tuple[bool, dict]:
     if response["timed_out"]:
         return False, "Execution timed out (5s)"
 
-    if response["status_value"] != 0:
+    if response["status_value"] != 0:  # pragma: no cover
         return False, response["stderr"]
 
     output = json.loads(response["stdout"])

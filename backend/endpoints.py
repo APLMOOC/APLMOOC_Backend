@@ -125,7 +125,6 @@ def submit():
         demo_config = json.load(f)
 
     result, feedback = asyncio.run(grader.evaluate(code, demo_config))
-    print(result, feedback)
 
     if result:
         database.insert_points(id_user, id_problem, 1)

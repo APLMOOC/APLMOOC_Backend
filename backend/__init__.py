@@ -8,21 +8,18 @@ import secrets
 import shutil
 from flask import Flask
 
-def create_app(testing=False):
+
+def setup_directory(app: Flask, testing: bool) -> str:  # pragma: no cover
     """
-    Application factory for the APLMOOC_Backend application.
+    Setup working directory for the application.
 
     Args:
-        testing (bool, optional):
-            Indicates whether to create a new, empty instance for testing purposes.
-            Defaults to `False`.
+        app (Flask): The Flask application instance
+        testing (bool): Whether this application is being tested or not
 
     Returns:
-        Flask: the Flask application to run
+        str: The secret key for the Flask application
     """
-
-    instance_folder = "instance" if not testing else "instance_test"
-    app = Flask(__name__, instance_path=os.path.join(os.getcwd(), instance_folder))
 
     if testing:
         try:
@@ -44,6 +41,27 @@ def create_app(testing=False):
         key = secrets.token_hex(64)
         with open(keyfile, "w", encoding="utf-8") as f:
             f.write(key)
+
+    return key
+
+
+def create_app(testing: bool = False) -> Flask:
+    """
+    Application factory for the APLMOOC_Backend application.
+
+    Args:
+        testing (bool, optional):
+            Indicates whether to create a new, empty instance for testing purposes.
+            Defaults to `False`.
+
+    Returns:
+        Flask: the Flask application to run
+    """
+
+    instance_folder = "instance" if not testing else "instance_test"
+    app = Flask(__name__, instance_path=os.path.join(os.getcwd(), instance_folder))
+
+    key = setup_directory(app, testing)
 
     app.config.from_mapping(
         TESTING=testing,
@@ -80,7 +98,7 @@ def create_app(testing=False):
         return {"error": "Unsupported Media Type"}, 415
 
     @app.errorhandler(500)
-    def error_500(error):
+    def error_500(error):  # pragma: no cover
         del error
         return {"error": "Interal Server Error"}, 500
 

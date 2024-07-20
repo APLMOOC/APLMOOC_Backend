@@ -44,7 +44,7 @@ async def evaluate(code: str, options: dict) -> dict:
     """
 
     # Wrap user code in text definition
-    code_aplstring = code.replace("'", "''")
+    code_aplstring = json.dumps(code.replace("'", "''"))
     options_aplstring = json.dumps(options).replace("'", "''")
     code_aplcode = f"\nuser_code←0⎕JSON'{code_aplstring}'\n"
     options_aplcode = f"\nopts←0⎕JSON'{options_aplstring}'\n"

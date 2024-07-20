@@ -1,22 +1,29 @@
-from flask import Flask
+"""This file initialises the APL MOOC backend server.
+
+Please check the README.md file for deployment and running instructions.
+"""
+
 import os
 import secrets
 import shutil
+from flask import Flask
 
 def create_app(testing=False):
     """
     Application factory for the APLMOOC_Backend application.
 
     Args:
-        testing (bool, optional): Indicates whether to create a new, empty instance for testing purposes. Defaults to `False`.
+        testing (bool, optional):
+            Indicates whether to create a new, empty instance for testing purposes.
+            Defaults to `False`.
 
     Returns:
         Flask: the Flask application to run
     """
-    
+
     instance_folder = "instance" if not testing else "instance_test"
     app = Flask(__name__, instance_path=os.path.join(os.getcwd(), instance_folder))
-    
+
     if testing:
         try:
             shutil.rmtree(app.instance_path)
@@ -31,11 +38,11 @@ def create_app(testing=False):
     keyfile = os.path.join(app.instance_path, ".flask_secret")
     key = ""
     try:
-        with open(keyfile, "r") as f:
+        with open(keyfile, "r", encoding="utf-8") as f:
             key = f.readline().strip()
     except FileNotFoundError:
         key = secrets.token_hex(64)
-        with open(keyfile, "w") as f:
+        with open(keyfile, "w", encoding="utf-8") as f:
             f.write(key)
 
     app.config.from_mapping(
@@ -44,32 +51,37 @@ def create_app(testing=False):
         SQLALCHEMY_DATABASE_URI="sqlite:///points.db",
     )
 
-    from . import database
+    from . import database  # pylint: disable=import-outside-toplevel
     database.db.init_app(app)
     with app.app_context():
         database.db.create_all()
 
-    from . import endpoints
+    from . import endpoints  # pylint: disable=import-outside-toplevel
     app.register_blueprint(endpoints.bp)
 
     @app.errorhandler(400)
-    def error_400(e):
+    def error_400(error):
+        del error
         return {"error": "Bad Request"}, 400
 
     @app.errorhandler(404)
-    def error_404(e):
+    def error_404(error):
+        del error
         return {"error": "Not Found"}, 404
 
     @app.errorhandler(405)
-    def error_405(e):
+    def error_405(error):
+        del error
         return {"error": "Method Not Allowed"}, 405
 
     @app.errorhandler(415)
-    def error_415(e):
+    def error_415(error):
+        del error
         return {"error": "Unsupported Media Type"}, 415
 
     @app.errorhandler(500)
-    def error_500(e):
+    def error_500(error):
+        del error
         return {"error": "Interal Server Error"}, 500
 
     return app

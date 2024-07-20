@@ -1,2 +1,2 @@
 #!/bin/bash
-poetry run pylint backend
+poetry run pylint backend tests

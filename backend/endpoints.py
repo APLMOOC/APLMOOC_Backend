@@ -93,12 +93,12 @@ def submit():
         Evaluation:
             type: object
             properties:
-                message:
-                    type: string
-                    description: A message telling whether the code executed correctly or not
+                points:
+                    type: int
+                    description: How many points were awarded for submission
                 feedback:
                     type: string
-                    description: A description of which test(s) the user passed
+                    description: A message to display to the user containing error and test information
     responses:
         200:
             description: A JSON object containing the status of the evaluation and feedback
@@ -129,9 +129,13 @@ def submit():
 
     result, feedback = asyncio.run(grader.evaluate(code, config))
 
-    if result:
-        database.insert_points(id_user, id_problem, 1)
-        return {"message": "Code successfully executed!", "feedback": feedback}, 200
-
-    database.insert_points(id_user, id_problem, 0)
-    return {"message": "Tests failed!", "feedback": feedback}, 200
+    match result:
+        case grader.GradingStatus.PASSED_BASIC:
+            database.insert_points(id_user, id_problem, 1)
+            return {"points": 1, "feedback": f"Passed basic tests, well done! {feedback}"}, 200
+        case grader.GradingStatus.PASSED_ALL:
+            database.insert_points(id_user, id_problem, 2)
+            return {"points": 2, "feedback": "All tests passed!"}, 200
+        case grader.GradingStatus.ERROR | grader.GradingStatus.FAILED | _:
+            database.insert_points(id_user, id_problem, 0)
+            return {"points": 0, "feedback": feedback}, 200

@@ -6,9 +6,18 @@ used by dyalog.run during testing.
 """
 
 import json
+from enum import Enum
 import msgpack
 from websockets import connect
 from grader.grader_namespace import setup_framework
+
+
+class GradingStatus(Enum):
+    """An enum for the outcome of grading operations."""
+    FAILED = 0
+    PASSED_BASIC = 1
+    PASSED_ALL = 2
+    ERROR = 3
 
 
 async def run_apl(code: str) -> dict:
@@ -39,7 +48,7 @@ async def run_apl(code: str) -> dict:
         return response
 
 
-async def evaluate(code: str, options: dict) -> tuple[bool, dict]:
+async def evaluate(code: str, options: dict) -> tuple[GradingStatus, str]:
     """
     Evaluate an APL code submission
 
@@ -48,11 +57,10 @@ async def evaluate(code: str, options: dict) -> tuple[bool, dict]:
         options (dict): A dictionary of options as described in grader/README.md
 
     Returns:
-        bool:
-            Whether the code run succeeded or not.
-            A value of `True` indicates that no errors were encountered,
-            and not that all tests have been passed.
-        dict:
+        GradingStatus:
+            A value describing whether tests passed fully, passed partially,
+            failed, or errors were encountered.
+        str:
             Information about the evaluation
     """
 
@@ -71,23 +79,22 @@ async def evaluate(code: str, options: dict) -> tuple[bool, dict]:
 
     # Parse the response data
     if response["timed_out"]:
-        return False, "Execution timed out (5s)"
+        return GradingStatus.ERROR, "Execution timed out (>5s)"
 
     if response["status_value"] != 0:  # pragma: no cover
-        return False, response["stderr"]
+        return GradingStatus.ERROR, response["stderr"]
 
     output = json.loads(response["stdout"])
-    feedback = ["Basic test failed. ",
-                "Passed basic tests, well done! For extra points, consider cases like ",
-                "Congratulations! All tests passed. "]
 
-    msg = feedback[output["status"]]
-    if output["status"] < 2:
-        if "error" in output:
-            msg += "An error occurred. " + output["report"]
-        if "larg" in output:
-            msg += output["larg"] + " as left argument and "
-        if "rarg" in output:
-            msg += output["rarg"] + " as right argument."
+    if "error" in output:
+        return GradingStatus.ERROR, output["report"]
 
-    return True, msg
+    if output["status"] == 2:
+        return GradingStatus.PASSED_ALL, ""
+
+    return (
+        GradingStatus(output["status"]),
+        "Failed test: " +
+        (f"{output['larg']} as left argument and " if "larg" in output else "") +
+        (f"{output['rarg']} as right argument." if "rarg" in output else "")
+    )

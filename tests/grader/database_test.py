@@ -33,9 +33,9 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.is_json, True)
         self.assertListEqual(response.json.get("points"), [
-            {"id_user": "1", "points": 3},
-            {"id_user": "2", "points": 2},
-            {"id_user": "3", "points": 1},
+            {"id_user": "1", "points": 6},
+            {"id_user": "2", "points": 4},
+            {"id_user": "3", "points": 2},
         ])
 
     def test_repeated_points_awarded_correctly(self):
@@ -56,9 +56,9 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.is_json, True)
         self.assertListEqual(response.json.get("points"), [
-            {"id_user": "1", "points": 2},
-            {"id_user": "2", "points": 2},
-            {"id_user": "3", "points": 1},
+            {"id_user": "1", "points": 4},
+            {"id_user": "2", "points": 4},
+            {"id_user": "3", "points": 2},
         ])
 
     def test_increasing_points_works_correctly(self):
@@ -72,5 +72,5 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.is_json, True)
         self.assertListEqual(response.json.get("points"), [
-            {"id_user": "1", "points": 1},
+            {"id_user": "1", "points": 2},
         ])

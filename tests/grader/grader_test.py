@@ -71,3 +71,15 @@ class TestGrader(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json["message"], "Code successfully executed!")
         self.assertIn("An error occurred.", response.json["feedback"])
+
+    def test_problem_does_not_exist(self):
+        """
+        Test a submission where the problem does not exist and a HTTP 400 response is returned.
+        """
+
+        response = helper.submit_code(
+            self.client,
+            "tests/grader/RankingFull.aplf",
+            id_problem="INVALID_PROBLEM",
+        )
+        self.assertEqual(response.status_code, 400)

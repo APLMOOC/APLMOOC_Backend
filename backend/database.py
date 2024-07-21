@@ -63,7 +63,7 @@ def init_problems():
             problem_config = json.load(f)
 
         id_problem = problem_config.get("id")
-        if id_problem is None:
+        if id_problem is None:  # pragma: no cover
             continue
 
         db.session.add(Problems(

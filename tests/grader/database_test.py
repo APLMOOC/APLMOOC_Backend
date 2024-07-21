@@ -60,3 +60,17 @@ class TestDatabase(unittest.TestCase):
             {"id_user": "2", "points": 2},
             {"id_user": "3", "points": 1},
         ])
+
+    def test_increasing_points_works_correctly(self):
+        """Test that students can increase their points correctly."""
+
+        helper.submit_code(self.client, "tests/grader/RankingError.aplf")
+        helper.submit_code(self.client, "tests/grader/RankingFull.aplf")
+        helper.submit_code(self.client, "tests/grader/RankingError.aplf")
+
+        response = self.client.get("/get")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.is_json, True)
+        self.assertListEqual(response.json.get("points"), [
+            {"id_user": "1", "points": 1},
+        ])

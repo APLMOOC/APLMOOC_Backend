@@ -4,6 +4,7 @@ Grader funtionality includes code submission and the awarding of points.
 """
 
 import unittest
+import base64
 from backend import create_app
 from . import helper
 
@@ -83,3 +84,20 @@ class TestGrader(unittest.TestCase):
             id_problem="INVALID_PROBLEM",
         )
         self.assertEqual(response.status_code, 400)
+
+    def test_p1(self):
+        """
+        Test the fully correct submission, which passes all test cases.
+        """
+
+        code = "A←{13.7×206.55}"
+        response = self.client.post("/submit", json={
+            "id_user": "1",
+            "id_problem": "ch1_p1",
+            "code_encoded": base64.b64encode(code.encode()).decode("utf-8"),
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(response.json, {
+            "points": 2,
+            "feedback": "All tests passed!",
+        })

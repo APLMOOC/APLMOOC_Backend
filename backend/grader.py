@@ -12,7 +12,7 @@ import requests
 from websockets import connect
 from grader.grader_namespace import setup_framework
 
-MOOC_API = "https://mooc.fi/api"
+MOOC_API = "https://www.mooc.fi/api/v8"
 
 
 class GradingStatus(Enum):
@@ -117,14 +117,9 @@ def get_user_details(mooc_token: str) -> dict | None:
     """
 
     body = {
-        "query": \
-"""
-{
-    currentUser(search: $search) {
-        id
-    }
-}
-""",
+        "operationName": "IDQuery",
+        "variables": {"search": None},
+        "query": "query IDQuery($search: String) {\n  currentUser(search: $search) {\n    id\n  }\n}"
     }
 
     response = requests.post(MOOC_API, json=body, headers={
@@ -134,7 +129,7 @@ def get_user_details(mooc_token: str) -> dict | None:
     if response.status_code != 200:
         return None
     
-    if not response.json["data"]["currentUser"]:
+    if not response.json()["data"]["currentUser"]:
         return None
     
-    return response.json["data"]["currentUser"]["id"]
+    return response.json()["data"]["currentUser"]["id"]

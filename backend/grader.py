@@ -117,19 +117,48 @@ def get_user_details(mooc_token: str) -> dict | None:
     """
 
     body = {
-        "operationName": "IDQuery",
+        "operationName": "UserInfo",
         "variables": {"search": None},
-        "query": "query IDQuery($search: String) {\n  currentUser(search: $search) {\n    id\n  }\n}"
+        "query": \
+"""
+query UserInfo($search: String) {
+  currentUser(search: $search) {
+    id
+    full_name
+    email
+    student_number
+    username
+  }
+}
+"""
     }
 
-    response = requests.post(MOOC_API, json=body, headers={
+    response = requests.post(MOOC_API, json=body, timeout=5, headers={
         "Authorization": f"Bearer {mooc_token}",
     })
 
     if response.status_code != 200:
         return None
+
+    return response.json()["data"]["currentUser"]
+
+
+def get_user_id(mooc_token: str) -> str | None:
+    """
+    Get a user's ID based on their mooc.fi token.
+
+    Args:
+        mooc_token (str): The user's mooc.fi token
     
-    if not response.json()["data"]["currentUser"]:
+    Returns:
+        str:
+            The user's mooc.fi user ID,
+            or None if the user does not exist
+    """
+
+    user_details = get_user_details(mooc_token)
+
+    if not user_details:
         return None
-    
-    return response.json()["data"]["currentUser"]["id"]
+
+    return user_details.get("id")

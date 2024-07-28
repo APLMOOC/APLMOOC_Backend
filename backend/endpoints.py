@@ -119,7 +119,7 @@ def submit():
     if not all((id_problem, mooc_token, code_encoded)):
         abort(400)
 
-    id_user = grader.get_user_details(mooc_token)
+    id_user = grader.get_user_id(mooc_token)
     if not id_user:
         abort(400)
 

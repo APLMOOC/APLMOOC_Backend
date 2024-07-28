@@ -79,8 +79,8 @@ def submit():
           in: body
           type: string
           required: true
-        - name: id_user
-          description: The ID of the user submitting the request
+        - name: mooc_token
+          description: The mooc.fi token for the user submitting the request
           in: body
           type: string
           required: true
@@ -113,10 +113,14 @@ def submit():
     # Read and parse parameters
 
     id_problem = request.json.get("id_problem")
-    id_user = request.json.get("id_user")
+    mooc_token = request.json.get("mooc_token")
     code_encoded = request.json.get("code_encoded")
 
-    if not all((id_problem, id_user, code_encoded)):
+    if not all((id_problem, mooc_token, code_encoded)):
+        abort(400)
+
+    id_user = grader.get_user_details(mooc_token)
+    if not id_user:
         abort(400)
 
     code = base64.b64decode(code_encoded).decode("utf-8")

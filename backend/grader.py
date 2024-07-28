@@ -8,8 +8,11 @@ used by dyalog.run during testing.
 import json
 from enum import Enum
 import msgpack
+import requests
 from websockets import connect
 from grader.grader_namespace import setup_framework
+
+MOOC_API = "https://mooc.fi/api"
 
 
 class GradingStatus(Enum):
@@ -98,3 +101,40 @@ async def evaluate(code: str, options: dict) -> tuple[GradingStatus, str]:
         (f"{output['larg']} as left argument and " if "larg" in output else "") +
         (f"{output['rarg']} as right argument." if "rarg" in output else "")
     )
+
+
+def get_user_details(mooc_token: str) -> dict | None:
+    """
+    Get details for a user based on their mooc.fi token.
+
+    Args:
+        mooc_token (str): The user's mooc.fi token
+    
+    Returns:
+        dict:
+            All of the user's information retrieved from mooc.fi,
+            or None if the user does not exist
+    """
+
+    body = {
+        "query": \
+"""
+{
+    currentUser(search: $search) {
+        id
+    }
+}
+""",
+    }
+
+    response = requests.post(MOOC_API, json=body, headers={
+        "Authorization": f"Bearer {mooc_token}",
+    })
+
+    if response.status_code != 200:
+        return None
+    
+    if not response.json["data"]["currentUser"]:
+        return None
+    
+    return response.json["data"]["currentUser"]["id"]

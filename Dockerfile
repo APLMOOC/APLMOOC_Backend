@@ -21,4 +21,4 @@ RUN poetry install --no-root --no-interaction --no-ansi
 
 COPY . .
 
-CMD [ "poetry", "run", "gunicorn", "-w", "4", "--bind", "0.0.0.0:5000", "backend:create_app()"]
+CMD [ "poetry", "run", "gunicorn", "-w", "4", "--bind", "0.0.0.0:20001", "backend:create_app()"]

@@ -8,12 +8,15 @@ IDs and points are valid in the functions calling the database functions.
 
 import os
 import json
+from flask import Blueprint
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import UniqueConstraint, event
 from sqlalchemy.sql import func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.engine import Connection
 from sqlalchemy.schema import Table
+
+bp = Blueprint("database", __name__, cli_group=None)
 
 
 class Base(DeclarativeBase):  # pylint: disable=too-few-public-methods
@@ -50,6 +53,11 @@ class Problems(db.Model):  # pylint: disable=too-few-public-methods
 def init_problems(target: Table, connection: Connection, **kwargs):
     """
     Reads the available problems and stores them in the Problems table.
+
+    Args:
+        target (Table): The table variable automatically provided by Flask
+        connection (Connection): The connection variable automatically provided by Flask
+        **kwargs: Any other arguments. Ignored.
     """
 
     del kwargs
@@ -76,6 +84,17 @@ def init_problems(target: Table, connection: Connection, **kwargs):
         })
 
     connection.commit()
+
+
+@bp.cli.command("init_db")
+def init_db():
+    """
+    Initialise the database.
+    
+    To run this command, run `flask init_db` in the console.
+    """
+
+    db.create_all()
 
 
 def get_problem_config(id_problem: str) -> dict | None:

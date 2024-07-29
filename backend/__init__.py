@@ -70,8 +70,7 @@ def create_app(testing: bool = False) -> Flask:
 
     from . import database  # pylint: disable=import-outside-toplevel
     database.db.init_app(app)
-    with app.app_context():
-        database.db.create_all()
+    app.register_blueprint(database.bp)
 
     from . import endpoints  # pylint: disable=import-outside-toplevel
     app.register_blueprint(endpoints.bp)

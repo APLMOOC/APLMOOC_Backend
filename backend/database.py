@@ -9,7 +9,7 @@ IDs and points are valid in the functions calling the database functions.
 import os
 import json
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import UniqueConstraint, event
 from sqlalchemy.sql import func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -44,13 +44,13 @@ class Problems(db.Model):  # pylint: disable=too-few-public-methods
     config: Mapped[str] = mapped_column()
 
 
+@event.listens_for(Problems.__table__, "after_create")
 def init_problems():
     """
     Reads the available problems and stores them in the Problems table.
     """
 
     db.session.query(Problems).delete()
-    db.session.commit()
 
     problem_files = [
         os.path.join("problems", file) for file in os.listdir("problems")

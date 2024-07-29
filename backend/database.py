@@ -12,6 +12,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import UniqueConstraint, event
 from sqlalchemy.sql import func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.engine import Connection
+from sqlalchemy.schema import Table
 
 
 class Base(DeclarativeBase):  # pylint: disable=too-few-public-methods
@@ -45,14 +47,14 @@ class Problems(db.Model):  # pylint: disable=too-few-public-methods
 
 
 @event.listens_for(Problems.__table__, "after_create")
-def init_problems(target, connection, **kwargs):
+def init_problems(target: Table, connection: Connection, **kwargs):
     """
     Reads the available problems and stores them in the Problems table.
     """
 
     del kwargs
 
-    connection.query(target).delete()
+    connection.execute(target.delete())
 
     problem_files = [
         os.path.join("problems", file) for file in os.listdir("problems")
@@ -68,10 +70,10 @@ def init_problems(target, connection, **kwargs):
         if id_problem is None:  # pragma: no cover
             continue
 
-        connection.add(target(
-            id_problem = id_problem,
-            config = json.dumps(problem_config),
-        ))
+        connection.execute(target.insert(), {
+            "id_problem": id_problem,
+            "config": json.dumps(problem_config),
+        })
 
     connection.commit()
 

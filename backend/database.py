@@ -89,9 +89,9 @@ def init_problems(target: Table, connection: Connection, **kwargs):
 @bp.cli.command("init_db")
 def init_db():
     """
-    Initialise the database.
+    Initialises the database.
     
-    To run this command, run `flask init_db` in the console.
+    To run this command, run `flask --app backend init_db` in the console.
     """
 
     db.create_all()

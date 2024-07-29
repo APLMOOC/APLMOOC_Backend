@@ -45,12 +45,14 @@ class Problems(db.Model):  # pylint: disable=too-few-public-methods
 
 
 @event.listens_for(Problems.__table__, "after_create")
-def init_problems():
+def init_problems(target, connection, **kwargs):
     """
     Reads the available problems and stores them in the Problems table.
     """
 
-    db.session.query(Problems).delete()
+    del kwargs
+
+    connection.query(target).delete()
 
     problem_files = [
         os.path.join("problems", file) for file in os.listdir("problems")
@@ -66,12 +68,12 @@ def init_problems():
         if id_problem is None:  # pragma: no cover
             continue
 
-        db.session.add(Problems(
+        connection.add(target(
             id_problem = id_problem,
             config = json.dumps(problem_config),
         ))
 
-    db.session.commit()
+    connection.commit()
 
 
 def get_problem_config(id_problem: str) -> dict | None:

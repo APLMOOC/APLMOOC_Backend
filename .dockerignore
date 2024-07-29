@@ -1,1 +1,7 @@
-*.sqlite3
+**/__pycache__
+instance
+instance_test
+.vscode
+.pytest_cache
+htmlcov
+.coverage

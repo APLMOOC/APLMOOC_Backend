@@ -7,6 +7,8 @@ import os
 import secrets
 import shutil
 from flask import Flask
+from flask_cors import CORS
+
 
 def setup_directory(app: Flask, testing: bool) -> str:  # pragma: no cover
     """
@@ -59,6 +61,7 @@ def create_app(testing: bool = False) -> Flask:
 
     instance_folder = "instance" if not testing else "instance_test"
     app = Flask(__name__, instance_path=os.path.join(os.getcwd(), instance_folder))
+    CORS(app, origins=["https://aplmooc.fi",])
 
     key = setup_directory(app, testing)
 
